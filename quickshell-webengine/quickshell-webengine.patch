@@ -1,0 +1,22 @@
+--- quickshell-0.2.1-original/CMakeLists.txt	2025-11-26 21:52:36.404373623 +0000
++++ quickshell-0.2.1-patched/CMakeLists.txt	2025-11-26 21:52:36.980372603 +0000
+@@ -46,6 +46,7 @@
+ 
+ boption(CRASH_REPORTER "Crash Handling" ON)
+ boption(USE_JEMALLOC "Use jemalloc" ON)
++boption(WEBENGINE "QtWebEngine" OFF)
+ boption(SOCKETS "Unix Sockets" ON)
+ boption(WAYLAND "Wayland" ON)
+ boption(WAYLAND_WLR_LAYERSHELL "  Wlroots Layer-Shell" ON REQUIRES WAYLAND)
+@@ -149,6 +150,11 @@
+ 	target_link_libraries(quickshell PRIVATE ${JEMALLOC_LIBRARIES})
+ endif()
+ 
++if(WEBENGINE)
++	find_package(Qt6 COMPONENTS WebEngineQuick WebChannel REQUIRED)
++	target_link_libraries(quickshell Qt6::WebEngineQuick Qt6::WebChannel)
++endif()
++
+ install(CODE "
+ 	execute_process(
+ 		COMMAND ${CMAKE_COMMAND} -E create_symlink \
