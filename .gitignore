@@ -75,6 +75,7 @@ yarn-error.log*
 
 # Package build artifacts (keep pristine sources)
 quickshell-*/
+!quickshell-webengine/
 dms-*/
 DankMaterialShell-*/
 danklinux-master/
