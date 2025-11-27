@@ -10,9 +10,8 @@ URL:                https://github.com/quickshell-mirror/quickshell
 Source0:            %{url}/archive/v%{version}/quickshell-%{version}.tar.gz
 Patch0:             quickshell-webengine.patch
 
-%if 0%{fedora} >= 43
+BuildRequires:      breakpad-devel
 BuildRequires:      breakpad-static
-%endif
 BuildRequires:      cmake
 BuildRequires:      cmake(Qt6Core)
 BuildRequires:      cmake(Qt6Qml)
@@ -22,7 +21,6 @@ BuildRequires:      cmake(Qt6WebEngineQuick)
 BuildRequires:      cmake(Qt6WebChannel)
 BuildRequires:      gcc-c++
 BuildRequires:      ninja-build
-BuildRequires:      pkgconfig(breakpad)
 BuildRequires:      pkgconfig(CLI11)
 BuildRequires:      pkgconfig(gbm)
 BuildRequires:      pkgconfig(jemalloc)
