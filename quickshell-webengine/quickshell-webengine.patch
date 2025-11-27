@@ -4,7 +4,7 @@
  
  boption(CRASH_REPORTER "Crash Handling" ON)
  boption(USE_JEMALLOC "Use jemalloc" ON)
-+boption(WEBENGINE "QtWebEngine" OFF)
++boption(WEBENGINE "QtWebEngine" ON)
  boption(SOCKETS "Unix Sockets" ON)
  boption(WAYLAND "Wayland" ON)
  boption(WAYLAND_WLR_LAYERSHELL "  Wlroots Layer-Shell" ON REQUIRES WAYLAND)
@@ -14,7 +14,7 @@
  
 +if(WEBENGINE)
 +	find_package(Qt6 COMPONENTS WebEngineQuick WebChannel REQUIRED)
-+	target_link_libraries(quickshell Qt6::WebEngineQuick Qt6::WebChannel)
++	target_link_libraries(quickshell PRIVATE Qt6::WebEngineQuick Qt6::WebChannel)
 +endif()
 +
  install(CODE "
