@@ -4,6 +4,7 @@ on:
   workflow_dispatch:
   push:
     paths:
+      - 'breakpad/**'
       - 'quickshell-webengine/**'
       - 'dms/**'
       - '.copr/**'
@@ -40,11 +41,23 @@ jobs:
         run: |
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
-      # Build QuickShell with WebEngine support
+      # Build breakpad first (dependency for quickshell-webengine)
+      - name: Build breakpad
+        run: |
+          echo "Building breakpad..."
+          breakpad_build_id=$(copr-cli build-package mecattaf/packages --nowait --name breakpad 2>/dev/null | grep -o 'builds: [0-9]*' | cut -d' ' -f2 || echo "0")
+          echo "BREAKPAD_BUILD_ID=$breakpad_build_id" >> $GITHUB_ENV
+          echo "Breakpad build ID: $breakpad_build_id"
+
+      # Build QuickShell with WebEngine support (depends on breakpad)
       - name: Build quickshell-webengine
         run: |
           echo "Building quickshell-webengine..."
-          quickshell_build_id=$(copr-cli build-package mecattaf/packages --nowait --name quickshell-webengine 2>/dev/null | grep -o 'builds: [0-9]*' | cut -d' ' -f2 || echo "0")
+          if [ "$BREAKPAD_BUILD_ID" != "0" ]; then
+            quickshell_build_id=$(copr-cli build-package mecattaf/packages --nowait --name quickshell-webengine --after-build-id "$BREAKPAD_BUILD_ID" 2>/dev/null | grep -o 'builds: [0-9]*' | cut -d' ' -f2 || echo "0")
+          else
+            quickshell_build_id=$(copr-cli build-package mecattaf/packages --nowait --name quickshell-webengine 2>/dev/null | grep -o 'builds: [0-9]*' | cut -d' ' -f2 || echo "0")
+          fi
           echo "QUICKSHELL_BUILD_ID=$quickshell_build_id" >> $GITHUB_ENV
           echo "QuickShell WebEngine build ID: $quickshell_build_id"
 
@@ -72,14 +85,20 @@ jobs:
 
           echo ""
           echo "=== Build IDs ==="
+          echo "Breakpad: $BREAKPAD_BUILD_ID"
           echo "QuickShell WebEngine: $QUICKSHELL_BUILD_ID"
           echo "DMS: $DMS_BUILD_ID"
+
+          echo ""
+          echo "=== Build Chain ==="
+          echo "breakpad → quickshell-webengine → dms"
 
           echo ""
           echo "Monitor builds at: https://copr.fedorainfracloud.org/coprs/mecattaf/packages/builds/"
           
           echo ""
           echo "=== Package Information ==="
+          echo "Breakpad: Google crash-reporting system (build dependency)"
           echo "QuickShell WebEngine: QuickShell with QtWebEngine and QtWebChannel support"
           echo "DMS: DankMaterialShell with React-based web UI components"
           echo "Optimized for GameScope microcompositor"

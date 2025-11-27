@@ -1,85 +1,56 @@
-name: Build QuickShell WebEngine Packages
+.PHONY: prepare qtprep goprep srpm prebuild
 
-on:
-  workflow_dispatch:
-  push:
-    paths:
-      - 'quickshell-webengine/**'
-      - 'dms/**'
-      - '.copr/**'
-      - '.github/workflows/build.yml'
-    branches: [ main, master ]
+# COPR passes spec= but we use SPECFILE internally
+SPECFILE ?= $(spec)
+BUILDDIR := $(shell pwd)
 
-jobs:
-  build-packages:
-    if: |
-      github.event_name == 'workflow_dispatch' ||
-      contains(github.event.head_commit.message, '[build-all]') ||
-      contains(github.event.head_commit.message, '[build-webengine]')
-    runs-on: ubuntu-latest
-    container:
-      image: 'registry.fedoraproject.org/fedora-minimal:latest'
+prepare:
+	dnf install --nodocs -y rpm-build rpmdevtools
 
-    steps:
-      - name: Prepare build environment
-        run: |
-          microdnf -y install --nodocs --setopt=install_weak_deps=0 \
-            copr-cli git tar gzip jq
+qtprep: prepare
+	dnf install --nodocs -y \
+		gcc gcc-c++ make cmake ninja-build \
+		qt6-qtbase-devel \
+		qt6-qtbase-private-devel \
+		qt6-qtdeclarative-devel \
+		qt6-qtwayland-devel \
+		qt6-qtwebengine-devel \
+		qt6-qtwebchannel-devel \
+		qt6-qtsvg-devel \
+		pam-devel \
+		pulseaudio-libs-devel \
+		pipewire-devel \
+		wayland-devel \
+		layer-shell-qt-devel
 
-      - name: Configure COPR
-        env:
-          COPR_CONF: ${{ secrets.COPR_CONFIG }}
-        run: |
-          mkdir -p ~/.config
-          echo "$COPR_CONF" > ~/.config/copr
+goprep: prepare
+	dnf install --nodocs -y \
+		golang \
+		git-core \
+		rpkg \
+		gzip \
+		wget
 
-      - name: Checkout repository
-        uses: actions/checkout@v4
+prebuild:
+	@buildtype="unknown"; \
+	if grep -q "Name:.*quickshell" "$(SPECFILE)"; then \
+		buildtype="qt"; \
+	elif grep -q "Name:.*dms" "$(SPECFILE)"; then \
+		buildtype="go"; \
+	fi; \
+	case $$buildtype in \
+		"qt") $(MAKE) -f $(lastword $(MAKEFILE_LIST)) qtprep;; \
+		"go") $(MAKE) -f $(lastword $(MAKEFILE_LIST)) goprep;; \
+		*) echo "Unknown package type in $(SPECFILE)"; exit 1;; \
+	esac
 
-      - name: Configure Git
-        run: |
-          git config --global --add safe.directory "$GITHUB_WORKSPACE"
-
-      # Build QuickShell with WebEngine support
-      - name: Build quickshell-webengine
-        run: |
-          echo "Building quickshell-webengine..."
-          quickshell_build_id=$(copr-cli build-package mecattaf/packages --nowait --name quickshell-webengine 2>/dev/null | grep -o 'builds: [0-9]*' | cut -d' ' -f2 || echo "0")
-          echo "QUICKSHELL_BUILD_ID=$quickshell_build_id" >> $GITHUB_ENV
-          echo "QuickShell WebEngine build ID: $quickshell_build_id"
-
-      # Build DMS (depends on quickshell-webengine)
-      - name: Build DMS
-        run: |
-          echo "Building DMS..."
-          if [ "$QUICKSHELL_BUILD_ID" != "0" ]; then
-            dms_build_id=$(copr-cli build-package mecattaf/packages --nowait --name dms --after-build-id "$QUICKSHELL_BUILD_ID" 2>/dev/null | grep -o 'builds: [0-9]*' | cut -d' ' -f2 || echo "0")
-          else
-            dms_build_id=$(copr-cli build-package mecattaf/packages --nowait --name dms 2>/dev/null | grep -o 'builds: [0-9]*' | cut -d' ' -f2 || echo "0")
-          fi
-          echo "DMS_BUILD_ID=$dms_build_id" >> $GITHUB_ENV
-          echo "DMS build ID: $dms_build_id"
-
-      # Check build status
-      - name: Check build status
-        if: always()
-        run: |
-          echo "Waiting for builds to register..."
-          sleep 60
-
-          echo "=== Build Status Summary ==="
-          copr-cli list-builds mecattaf/packages --output-format text-row | head -30
-
-          echo ""
-          echo "=== Build IDs ==="
-          echo "QuickShell WebEngine: $QUICKSHELL_BUILD_ID"
-          echo "DMS: $DMS_BUILD_ID"
-
-          echo ""
-          echo "Monitor builds at: https://copr.fedorainfracloud.org/coprs/mecattaf/packages/builds/"
-          
-          echo ""
-          echo "=== Package Information ==="
-          echo "QuickShell WebEngine: QuickShell with QtWebEngine and QtWebChannel support"
-          echo "DMS: DankMaterialShell with React-based web UI components"
-          echo "Optimized for GameScope microcompositor"
+srpm: prepare prebuild
+	cd $(dir $(SPECFILE)) && spectool -g $(notdir $(SPECFILE))
+	rpmbuild -bs \
+		--define "_sourcedir $(dir $(SPECFILE))" \
+		--define "_specdir $(dir $(SPECFILE))" \
+		--define "_builddir $(BUILDDIR)" \
+		--define "_srcrpmdir $(outdir)" \
+		--define "_rpmdir $(BUILDDIR)" \
+		--define "_buildrootdir $(BUILDDIR)/.build" \
+		$(SPECFILE)
