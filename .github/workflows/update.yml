@@ -50,7 +50,7 @@ jobs:
             
             # Update changelog
             DATE=$(date +"%a %b %d %Y")
-            CHANGELOG_ENTRY="* $DATE Agency <maintainer@agency-agency.dev> - $LATEST-1\n- Update to QuickShell $LATEST\n- Rebuild with QtWebEngine support"
+            CHANGELOG_ENTRY="* $DATE Agency <thomas@mecattaf.dev> - $LATEST-1\n- Update to QuickShell $LATEST\n- Rebuild with QtWebEngine support"
             
             sed -i "/%changelog/a $CHANGELOG_ENTRY" quickshell-webengine.spec
             
