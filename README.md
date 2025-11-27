@@ -44,7 +44,7 @@ Hardware GPU → Vulkan → GameScope → QuickShell+WebEngine → React UI
 ### Enable COPR Repository
 
 ```bash
-sudo dnf copr enable agency-agency/web-shell
+sudo dnf copr enable mecattaf/packages
 ```
 
 ### Install QuickShell with WebEngine
@@ -135,8 +135,8 @@ See [TESTING.md](docs/TESTING.md) for detailed instructions.
 
 ```bash
 # Clone repository
-git clone https://github.com/agency-agency/web-shell-copr
-cd web-shell-copr
+git clone https://github.com/mecattaf/packages
+cd packages
 
 # Build locally
 cd quickshell-webengine
@@ -169,9 +169,9 @@ Packages are automatically built for:
 
 ## 📊 Build Status
 
-[![COPR Build](https://copr.fedorainfracloud.org/coprs/agency-agency/web-shell/package/quickshell-webengine/status_image/last_build.png)](https://copr.fedorainfracloud.org/coprs/agency-agency/web-shell/package/quickshell-webengine/)
+[![COPR Build](https://copr.fedorainfracloud.org/coprs/mecattaf/packages/package/quickshell-webengine/status_image/last_build.png)](https://copr.fedorainfracloud.org/coprs/mecattaf/packages/package/quickshell-webengine/)
 
-Monitor builds: https://copr.fedorainfracloud.org/coprs/agency-agency/web-shell/
+Monitor builds: https://copr.fedorainfracloud.org/coprs/mecattaf/packages/
 
 ## 🛠️ Dependencies
 
@@ -203,7 +203,7 @@ echo $GAMESCOPE_WAYLAND_DISPLAY
 
 ```bash
 # Check COPR build logs
-copr-cli list-builds agency-agency/web-shell
+copr-cli list-builds mecattaf/packages
 
 # View specific build
 copr-cli get-build <build-id>
@@ -246,10 +246,10 @@ cd quickshell-webengine
 
 ## 📞 Support
 
-- **Issues**: https://github.com/agency-agency/web-shell-copr/issues
-- **COPR**: https://copr.fedorainfracloud.org/coprs/agency-agency/web-shell/
+- **Issues**: https://github.com/mecattaf/packages/issues
+- **COPR**: https://copr.fedorainfracloud.org/coprs/mecattaf/packages/
 - **QuickShell Discord**: (if applicable)
 
 ---
 
-**Status**: ✅ Active | **COPR**: `agency-agency/web-shell` | **Fedora**: 40, 41, Rawhide
+**Status**: ✅ Active | **COPR**: `mecattaf/packages` | **Fedora**: 40, 41, Rawhide

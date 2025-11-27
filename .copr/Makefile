@@ -44,7 +44,7 @@ jobs:
       - name: Build quickshell-webengine
         run: |
           echo "Building quickshell-webengine..."
-          quickshell_build_id=$(copr-cli build-package agency-agency/web-shell --nowait --name quickshell-webengine 2>/dev/null | grep -o 'builds: [0-9]*' | cut -d' ' -f2 || echo "0")
+          quickshell_build_id=$(copr-cli build-package mecattaf/packages --nowait --name quickshell-webengine 2>/dev/null | grep -o 'builds: [0-9]*' | cut -d' ' -f2 || echo "0")
           echo "QUICKSHELL_BUILD_ID=$quickshell_build_id" >> $GITHUB_ENV
           echo "QuickShell WebEngine build ID: $quickshell_build_id"
 
@@ -53,9 +53,9 @@ jobs:
         run: |
           echo "Building DMS..."
           if [ "$QUICKSHELL_BUILD_ID" != "0" ]; then
-            dms_build_id=$(copr-cli build-package agency-agency/web-shell --nowait --name dms --after-build-id "$QUICKSHELL_BUILD_ID" 2>/dev/null | grep -o 'builds: [0-9]*' | cut -d' ' -f2 || echo "0")
+            dms_build_id=$(copr-cli build-package mecattaf/packages --nowait --name dms --after-build-id "$QUICKSHELL_BUILD_ID" 2>/dev/null | grep -o 'builds: [0-9]*' | cut -d' ' -f2 || echo "0")
           else
-            dms_build_id=$(copr-cli build-package agency-agency/web-shell --nowait --name dms 2>/dev/null | grep -o 'builds: [0-9]*' | cut -d' ' -f2 || echo "0")
+            dms_build_id=$(copr-cli build-package mecattaf/packages --nowait --name dms 2>/dev/null | grep -o 'builds: [0-9]*' | cut -d' ' -f2 || echo "0")
           fi
           echo "DMS_BUILD_ID=$dms_build_id" >> $GITHUB_ENV
           echo "DMS build ID: $dms_build_id"
@@ -68,7 +68,7 @@ jobs:
           sleep 60
 
           echo "=== Build Status Summary ==="
-          copr-cli list-builds agency-agency/web-shell --output-format text-row | head -30
+          copr-cli list-builds mecattaf/packages --output-format text-row | head -30
 
           echo ""
           echo "=== Build IDs ==="
@@ -76,7 +76,7 @@ jobs:
           echo "DMS: $DMS_BUILD_ID"
 
           echo ""
-          echo "Monitor builds at: https://copr.fedorainfracloud.org/coprs/agency-agency/web-shell/builds/"
+          echo "Monitor builds at: https://copr.fedorainfracloud.org/coprs/mecattaf/packages/builds/"
           
           echo ""
           echo "=== Package Information ==="
