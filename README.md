@@ -1,3 +1,5 @@
+wip: will merge back to agency-agency after testing phase
+
 # QuickShell WebEngine - COPR Package Repository
 
 Automated COPR repository for QuickShell with QtWebEngine support, optimized for web-based desktop shells running on GameScope.
