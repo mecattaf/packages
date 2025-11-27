@@ -15,6 +15,7 @@ BuildRequires:      breakpad-static
 BuildRequires:      cmake
 BuildRequires:      cmake(Qt6Core)
 BuildRequires:      cmake(Qt6Qml)
+BuildRequires:      cmake(Qt6Quick)
 BuildRequires:      cmake(Qt6ShaderTools)
 BuildRequires:      cmake(Qt6WaylandClient)
 BuildRequires:      cmake(Qt6WebEngineQuick)

@@ -1,6 +1,6 @@
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -46,6 +46,7 @@
+@@ -46,6 +46,7 @@ boption(BUILD_TESTING "Build Tests (dev)" OFF)
  
  boption(CRASH_REPORTER "Crash Handling" ON)
  boption(USE_JEMALLOC "Use jemalloc" ON)
@@ -8,13 +8,25 @@
  boption(SOCKETS "Unix Sockets" ON)
  boption(WAYLAND "Wayland" ON)
  boption(WAYLAND_WLR_LAYERSHELL "  Wlroots Layer-Shell" ON REQUIRES WAYLAND)
-@@ -149,6 +150,11 @@
+@@ -111,6 +112,11 @@ if (SERVICE_STATUS_NOTIFIER OR SERVICE_MPRIS OR SERVICE_UPOWER OR SERVICE_NOTIFI
+ 	list(APPEND QT_FPDEPS DBus)
+ endif()
+ 
++# WebEngine support (optional)
++if (WEBENGINE_effective)
++	list(APPEND QT_FPDEPS WebEngineQuick WebChannel)
++endif()
++
+ find_package(Qt6 REQUIRED COMPONENTS ${QT_FPDEPS})
+ 
+ if (Qt6_VERSION VERSION_GREATER_EQUAL 6.9.0)
+@@ -149,6 +155,11 @@ if (USE_JEMALLOC_effective)
  	target_link_libraries(quickshell PRIVATE ${JEMALLOC_LIBRARIES})
  endif()
  
-+if(WEBENGINE)
-+	find_package(Qt6 COMPONENTS WebEngineQuick WebChannel REQUIRED)
++if (WEBENGINE_effective)
 +	target_link_libraries(quickshell PRIVATE Qt6::WebEngineQuick Qt6::WebChannel)
++	target_compile_definitions(quickshell PRIVATE QS_WEBENGINE)
 +endif()
 +
  install(CODE "
