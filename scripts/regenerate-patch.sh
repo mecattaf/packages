@@ -1,6 +1,6 @@
 #!/bin/bash
-# Simplified QuickShell WebEngine patch generator
-# Generates minimal patch with only essential changes
+# QuickShell WebEngine patch generator
+# Generates patch for adding QtWebEngine support to QuickShell
 
 set -euo pipefail
 
@@ -9,10 +9,9 @@ UPSTREAM_URL="https://github.com/quickshell-mirror/quickshell"
 WORKDIR="/tmp/quickshell-patch-$$"
 
 echo "=================================="
-echo "QuickShell WebEngine Patch Generator (Simplified)"
+echo "QuickShell WebEngine Patch Generator"
 echo "=================================="
 echo "Version: $VERSION"
-echo "Target: <30 line minimal patch"
 echo "=================================="
 
 # Clean and create workspace
@@ -23,22 +22,22 @@ cd "$WORKDIR"
 # Download upstream source
 echo ""
 echo "[1/5] Downloading QuickShell v${VERSION}..."
-if ! wget -q "${UPSTREAM_URL}/archive/v${VERSION}.tar.gz"; then
+if ! wget -q "${UPSTREAM_URL}/archive/v${VERSION}.tar.gz" -O source.tar.gz; then
     echo "❌ Failed to download QuickShell v${VERSION}"
     echo "   Check if version exists: ${UPSTREAM_URL}/releases"
     exit 1
 fi
 
 echo "[2/5] Extracting source..."
-tar xzf "v${VERSION}.tar.gz"
+tar xzf source.tar.gz
 
 # Create two copies
-cp -r "quickshell-${VERSION}" "quickshell-${VERSION}-original"
-cp -r "quickshell-${VERSION}" "quickshell-${VERSION}-patched"
+cp -r "quickshell-${VERSION}" "original"
+cp -r "quickshell-${VERSION}" "patched"
 
-cd "quickshell-${VERSION}-patched"
+cd "patched"
 
-echo "[3/5] Applying minimal WebEngine modifications..."
+echo "[3/5] Applying WebEngine modifications..."
 
 # Check if CMakeLists.txt exists
 if [ ! -f "CMakeLists.txt" ]; then
@@ -46,32 +45,49 @@ if [ ! -f "CMakeLists.txt" ]; then
     exit 1
 fi
 
-# Backup original
+# Find the line numbers for insertion points
+SOCKETS_LINE=$(grep -n "^boption(SOCKETS " CMakeLists.txt | cut -d: -f1)
+WAYLAND_ENDIF_LINE=$(grep -n "^endif()" CMakeLists.txt | head -3 | tail -1 | cut -d: -f1)
+JEMALLOC_ENDIF_LINE=$(grep -n "^endif()" CMakeLists.txt | head -4 | tail -1 | cut -d: -f1)
+
+if [ -z "$SOCKETS_LINE" ]; then
+    echo "❌ Could not find SOCKETS boption"
+    exit 1
+fi
+
+echo "   Found SOCKETS at line $SOCKETS_LINE"
+echo "   Found WAYLAND endif at line $WAYLAND_ENDIF_LINE"
+echo "   Found JEMALLOC endif at line $JEMALLOC_ENDIF_LINE"
+
+# Create the patched file using ed for precise line-based editing
 cp CMakeLists.txt CMakeLists.txt.backup
 
-# Modification 1: Add WEBENGINE option after USE_JEMALLOC option
-if ! grep -q "boption(USE_JEMALLOC" CMakeLists.txt; then
-    echo "❌ Could not find USE_JEMALLOC option in CMakeLists.txt"
-    echo "   Upstream structure may have changed"
-    exit 1
-fi
+# Modification 1: Add WEBENGINE option after SOCKETS
+# Find the exact line and insert after it
+sed -i "/^boption(SOCKETS /a boption(WEBENGINE \"QtWebEngine\" ON)" CMakeLists.txt
 
-sed -i '/^boption(USE_JEMALLOC/a\
-boption(WEBENGINE "QtWebEngine" OFF)' CMakeLists.txt
+# Modification 2: Add WebEngine deps after WAYLAND block (after the endif following WAYLAND)
+# We need to insert after the endif that closes the WAYLAND block
+# The WAYLAND block is: if (WAYLAND) ... endif()
 
-# Modification 2: Add WebEngine find_package and linking after jemalloc
-if ! grep -q "pkg_check_modules(JEMALLOC" CMakeLists.txt; then
-    echo "❌ Could not find jemalloc section in CMakeLists.txt"
-    exit 1
-fi
-
-# Add the minimal WebEngine block after the jemalloc endif()
-sed -i '/pkg_check_modules(JEMALLOC/,/^endif()/{
-    /^endif()/a\
+# Find the pattern: endif() that follows the WaylandClientPrivate line
+sed -i '/list(APPEND QT_PRIVDEPS WaylandClientPrivate)/,/^endif()/{
+    /^endif()/ a\
 \
-if(WEBENGINE)\
-\	find_package(Qt6 COMPONENTS WebEngineQuick WebChannel REQUIRED)\
-\	target_link_libraries(quickshell Qt6::WebEngineQuick Qt6::WebChannel)\
+# WebEngine support (optional)\
+if (WEBENGINE_effective)\
+\	list(APPEND QT_FPDEPS WebEngineQuick WebChannel)\
+endif()
+}' CMakeLists.txt
+
+# Modification 3: Add WebEngine linking after jemalloc block
+sed -i '/target_link_libraries(quickshell PRIVATE \${JEMALLOC_LIBRARIES})/,/^endif()/{
+    /^endif()/ a\
+\
+# WebEngine linking\
+if (WEBENGINE_effective)\
+\	target_link_libraries(quickshell PRIVATE Qt6::WebEngineQuick Qt6::WebChannel)\
+\	target_compile_definitions(quickshell PRIVATE QS_WEBENGINE)\
 endif()
 }' CMakeLists.txt
 
@@ -79,70 +95,52 @@ echo "[4/5] Generating patch..."
 cd "$WORKDIR"
 
 # Generate unified diff
-diff -Naur "quickshell-${VERSION}-original/CMakeLists.txt" \
-           "quickshell-${VERSION}-patched/CMakeLists.txt" \
-           > "quickshell-webengine-${VERSION}.patch" || true
+diff -Naur "original/CMakeLists.txt" "patched/CMakeLists.txt" > "quickshell-webengine.patch" || true
 
 # Check if patch was created
-if [ ! -s "quickshell-webengine-${VERSION}.patch" ]; then
+if [ ! -s "quickshell-webengine.patch" ]; then
     echo "❌ Patch generation failed (empty file)"
+    echo "Showing diff between files:"
+    diff "original/CMakeLists.txt" "patched/CMakeLists.txt" || true
     exit 1
 fi
 
-# Verify patch is minimal (<30 lines)
-PATCH_LINES=$(wc -l < "quickshell-webengine-${VERSION}.patch")
+PATCH_LINES=$(wc -l < "quickshell-webengine.patch")
 echo "   Patch size: $PATCH_LINES lines"
 
-if [ "$PATCH_LINES" -ge 30 ]; then
-    echo "⚠️  Warning: Patch is $PATCH_LINES lines (target: <30)"
-fi
-
 echo "[5/5] Verifying patch..."
-cd "quickshell-${VERSION}-original"
+cd "original"
 
-if patch -p1 --dry-run --silent < "../quickshell-webengine-${VERSION}.patch" 2>&1; then
+if patch -p1 --dry-run < "../quickshell-webengine.patch" 2>&1; then
     echo "✅ Patch applies cleanly!"
 else
     echo "❌ Patch verification failed!"
     echo ""
     echo "Trying to apply patch with output:"
-    patch -p1 --dry-run < "../quickshell-webengine-${VERSION}.patch" || true
+    patch -p1 --dry-run < "../quickshell-webengine.patch" || true
     exit 1
 fi
 
-# Show patch stats
-cd "$WORKDIR"
+# Show patch
 echo ""
-echo "Patch Statistics:"
-echo "-----------------------------------"
-echo "Lines: $PATCH_LINES (target: <30)"
-if command -v diffstat &> /dev/null; then
-    diffstat "quickshell-webengine-${VERSION}.patch"
-fi
-echo "-----------------------------------"
-echo ""
-echo "Patch content:"
-echo "-----------------------------------"
-cat "quickshell-webengine-${VERSION}.patch"
-echo "-----------------------------------"
+echo "=================================="
+echo "Generated Patch:"
+echo "=================================="
+cat "../quickshell-webengine.patch"
+echo "=================================="
 
 # Success!
 echo ""
-echo "✅ Simplified patch generated successfully!"
+echo "✅ Patch generated successfully!"
 echo ""
-echo "📍 Location: ${WORKDIR}/quickshell-webengine-${VERSION}.patch"
+echo "📍 Location: ${WORKDIR}/quickshell-webengine.patch"
 echo ""
 echo "📋 Next steps:"
 echo "   1. Copy to repository:"
-echo "      cp ${WORKDIR}/quickshell-webengine-${VERSION}.patch \\"
-echo "         quickshell-webengine/quickshell-webengine.patch"
+echo "      cp ${WORKDIR}/quickshell-webengine.patch quickshell-webengine/"
 echo ""
 echo "   2. Test build:"
 echo "      cd quickshell-webengine"
 echo "      spectool -g quickshell-webengine.spec"
 echo "      rpmbuild -bp quickshell-webengine.spec"
-echo ""
-
-# Keep workspace for inspection
-echo "🗂️  Workspace preserved at: $WORKDIR"
 echo ""
