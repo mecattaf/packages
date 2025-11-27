@@ -1,5 +1,5 @@
---- quickshell-0.2.1-original/CMakeLists.txt	2025-11-26 21:52:36.404373623 +0000
-+++ quickshell-0.2.1-patched/CMakeLists.txt	2025-11-26 21:52:36.980372603 +0000
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
 @@ -46,6 +46,7 @@
  
  boption(CRASH_REPORTER "Crash Handling" ON)
