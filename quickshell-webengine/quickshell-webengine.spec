@@ -3,16 +3,17 @@
 Name:               quickshell-webengine
 Version:            0.2.1
 Release:            1%{?dist}
-Summary:            Flexible QtQuick based desktop shell toolkit with QtWebEngine support
+Summary:            Flexible QtQuick desktop shell toolkit with QtWebEngine support
 
 License:            LGPL-3.0-only AND GPL-3.0-only
 URL:                https://github.com/quickshell-mirror/quickshell
 Source0:            %{url}/archive/v%{version}/quickshell-%{version}.tar.gz
 Patch0:             quickshell-webengine.patch
 
-BuildRequires:      breakpad-devel
-BuildRequires:      breakpad-static
 BuildRequires:      cmake
+BuildRequires:      ninja-build
+BuildRequires:      gcc-c++
+
 BuildRequires:      cmake(Qt6Core)
 BuildRequires:      cmake(Qt6Qml)
 BuildRequires:      cmake(Qt6Quick)
@@ -20,8 +21,8 @@ BuildRequires:      cmake(Qt6ShaderTools)
 BuildRequires:      cmake(Qt6WaylandClient)
 BuildRequires:      cmake(Qt6WebEngineQuick)
 BuildRequires:      cmake(Qt6WebChannel)
-BuildRequires:      gcc-c++
-BuildRequires:      ninja-build
+
+BuildRequires:      pkgconfig(breakpad)
 BuildRequires:      pkgconfig(CLI11)
 BuildRequires:      pkgconfig(gbm)
 BuildRequires:      pkgconfig(jemalloc)
@@ -30,6 +31,7 @@ BuildRequires:      pkgconfig(libpipewire-0.3)
 BuildRequires:      pkgconfig(pam)
 BuildRequires:      pkgconfig(wayland-client)
 BuildRequires:      pkgconfig(wayland-protocols)
+
 BuildRequires:      qt6-qtbase-private-devel
 BuildRequires:      spirv-tools
 
@@ -40,31 +42,30 @@ BuildRequires:      libasan
 Requires:           qt6-qtwebengine
 Requires:           qt6-qtwebchannel
 
+Provides:           desktop-notification-daemon
 Conflicts:          quickshell
 
-Provides:           desktop-notification-daemon
-
 %description
-Flexible toolkit for making desktop shells with QtQuick, targeting
-Wayland and X11.
+Flexible toolkit for building desktop shells using Qt Quick on Wayland or X11.
 
-This variant includes QtWebEngine and QtWebChannel support, enabling
-web-based UI components and modern web technologies in desktop shells.
+This build includes support for QtWebEngine and QtWebChannel, enabling HTML/JS
+user interfaces through the WebEngineView component.
 
 %prep
 %autosetup -n quickshell-%{version} -p1
 
 %build
-%cmake  -GNinja \
+%cmake -GNinja \
 %if %{with asan}
-        -DASAN=ON \
+      -DASAN=ON \
 %endif
-        -DBUILD_SHARED_LIBS=OFF \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DDISTRIBUTOR="Fedora COPR (mecattaf/packages)" \
-        -DDISTRIBUTOR_DEBUGINFO_AVAILABLE=YES \
-        -DINSTALL_QML_PREFIX=%{_lib}/qt6/qml \
-        -DWEBENGINE=ON
+      -DBUILD_SHARED_LIBS=OFF \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DDISTRIBUTOR="Fedora COPR (mecattaf/packages)" \
+      -DDISTRIBUTOR_DEBUGINFO_AVAILABLE=YES \
+      -DINSTALL_QML_PREFIX=%{_lib}/qt6/qml \
+      -DWEBENGINE=ON
+
 %cmake_build
 
 %install
@@ -84,7 +85,5 @@ web-based UI components and modern web technologies in desktop shells.
 %{_libdir}/qt6/qml/Quickshell
 
 %changelog
-* Wed Nov 27 2024 Agency <thomas@mecattaf.dev> - 0.2.1-1
-- Initial package with QtWebEngine support
-- Based on upstream quickshell 0.2.1
-- Adds WebEngine and WebChannel for web-based UI components
+* Thu Nov 28 2024 Your Name <you@example.com> - 0.2.1-1
+- Add QtWebEngine integration
