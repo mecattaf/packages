@@ -58,7 +58,7 @@ install -Dm755 dgop %{buildroot}%{_bindir}/dgop
 
 %changelog
 * Mon Oct 14 2024 Purian23 <purian23@users.noreply.github.com> - 0.1.7-1
-- Simplified spec to use latest stable tagged binary
+- Simplified spec  to use latest stable tagged binary
 - Updated to version 0.1.7
 - Uses /latest/download/ for automatic binary fetching
 
