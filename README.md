@@ -529,6 +529,5 @@ COPR handles this automatically via build dependencies.
 
 ---
 
-**Last Updated:** 2024-11-27
 **Maintained By:** mecattaf (thomas@mecattaf.dev)
 **Repository:** https://github.com/mecattaf/packages
