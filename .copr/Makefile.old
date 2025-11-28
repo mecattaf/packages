@@ -1,4 +1,5 @@
-.PHONY: prepare qtprep goprep srpm prebuild
+
+.PHONY: prepare qtprep goprep breakpadprep srpm prebuild
 
 # COPR passes spec= but we use SPECFILE internally
 SPECFILE ?= $(spec)
@@ -31,16 +32,26 @@ goprep: prepare
 		gzip \
 		wget
 
+breakpadprep: prepare
+	dnf install --nodocs -y \
+		gcc-c++ \
+		gmock-devel \
+		gtest-devel \
+		zlib-devel
+
 prebuild:
 	@buildtype="unknown"; \
 	if grep -q "Name:.*quickshell" "$(SPECFILE)"; then \
 		buildtype="qt"; \
 	elif grep -q "Name:.*dms" "$(SPECFILE)"; then \
 		buildtype="go"; \
+	elif grep -q "Name:.*breakpad" "$(SPECFILE)"; then \
+		buildtype="breakpad"; \
 	fi; \
 	case $$buildtype in \
 		"qt") $(MAKE) -f $(lastword $(MAKEFILE_LIST)) qtprep;; \
 		"go") $(MAKE) -f $(lastword $(MAKEFILE_LIST)) goprep;; \
+		"breakpad") $(MAKE) -f $(lastword $(MAKEFILE_LIST)) breakpadprep;; \
 		*) echo "Unknown package type in $(SPECFILE)"; exit 1;; \
 	esac
 
