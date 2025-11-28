@@ -19,30 +19,27 @@ Conflicts:          quickshell-git <= %{tag}
 Conflicts:          quickshell-webengine
 Provides:           desktop-notification-daemon
 
+%if 0%{?fedora} >= 43
+BuildRequires:      breakpad-static
+%endif
 BuildRequires:      cmake
-BuildRequires:      ninja-build
-BuildRequires:      gcc-c++
-
 BuildRequires:      cmake(Qt6Core)
 BuildRequires:      cmake(Qt6Qml)
-BuildRequires:      cmake(Qt6Quick)
 BuildRequires:      cmake(Qt6ShaderTools)
 BuildRequires:      cmake(Qt6WaylandClient)
 BuildRequires:      cmake(Qt6WebEngineQuick)
 BuildRequires:      cmake(Qt6WebChannel)
-
+BuildRequires:      gcc-c++
+BuildRequires:      ninja-build
 BuildRequires:      pkgconfig(breakpad)
 BuildRequires:      pkgconfig(CLI11)
 BuildRequires:      pkgconfig(gbm)
-BuildRequires:      pkgconfig(glib-2.0)
 BuildRequires:      pkgconfig(jemalloc)
 BuildRequires:      pkgconfig(libdrm)
 BuildRequires:      pkgconfig(libpipewire-0.3)
 BuildRequires:      pkgconfig(pam)
-BuildRequires:      pkgconfig(polkit-agent-1)
 BuildRequires:      pkgconfig(wayland-client)
 BuildRequires:      pkgconfig(wayland-protocols)
-
 BuildRequires:      qt6-qtbase-private-devel
 BuildRequires:      spirv-tools
 
@@ -52,6 +49,9 @@ BuildRequires:      libasan
 
 Requires:           qt6-qtwebengine
 Requires:           qt6-qtwebchannel
+
+Provides:           desktop-notification-daemon
+Conflicts:          quickshell
 
 %description
 Flexible toolkit for building desktop shells with QtQuick.

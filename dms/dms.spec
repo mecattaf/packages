@@ -1,7 +1,9 @@
-# Spec for DMS - uses rpkg macros for git builds
+# Spec for DMS - fetches from DankMaterialShell releases
+# Note: Cannot use rpkg git_repo_* macros as they reference the packaging repo,
+# not the upstream DankMaterialShell repo. Using explicit source URLs instead.
 
 %global debug_package %{nil}
-%global version {{{ git_repo_version }}}
+%global version 0.6.2
 %global pkg_summary DankMaterialShell - Material 3 inspired shell for Wayland compositors
 
 Name:           dms
@@ -12,19 +14,19 @@ Summary:        %{pkg_summary}
 
 License:        MIT
 URL:            https://github.com/AvengeMedia/DankMaterialShell
-VCS:            {{{ git_repo_vcs }}}
-Source0:        {{{ git_repo_pack }}}
+
+# Fetch source from GitHub release tag
+Source0:        %{url}/archive/v%{version}/DankMaterialShell-%{version}.tar.gz
 
 BuildRequires:  git-core
-BuildRequires:  rpkg
 BuildRequires:  gzip
 BuildRequires:  golang >= 1.24
 BuildRequires:  make
 BuildRequires:  wget
 BuildRequires:  systemd-rpm-macros
 
-# Core requirements - MODIFIED: Using quickshell-webengine from mecattaf/packages
-Requires:       quickshell-webengine
+# Core requirements - MODIFIED: Added quickshell-webengine variants
+Requires:       (quickshell-webengine-git or quickshell-webengine or quickshell-git or quickshell)
 Requires:       accountsservice
 Requires:       dms-cli
 Requires:       dgop
@@ -35,7 +37,8 @@ Recommends:     cliphist
 Recommends:     danksearch
 Recommends:     hyprpicker
 Recommends:     matugen
-Recommends:     quickshell-webengine
+# MODIFIED: Prefer quickshell-webengine-git
+Recommends:     quickshell-webengine-git
 Recommends:     wl-clipboard
 
 # Recommended system packages
@@ -51,8 +54,6 @@ app launcher, wallpaper customization, and fully customizable with plugins.
 Includes auto-theming for GTK/Qt apps with matugen, 20+ customizable widgets,
 process monitoring, notification center, clipboard history, dock, control center,
 lock screen, and comprehensive plugin system.
-
-This build uses quickshell-webengine from mecattaf/packages COPR for web UI support.
 
 %package -n dms-cli
 Summary:        DankMaterialShell CLI tool
@@ -70,12 +71,12 @@ URL:            https://github.com/AvengeMedia/dgop
 Provides:       dgop
 
 %description -n dgop
-DGOP is a stateless system monitoring tool that provides CPU, GPU, memory, and
-network statistics. Designed for integration with DankMaterialShell but can be
+DGOP is a stateless system monitoring tool that provides CPU, GPU, memory, and 
+network statistics. Designed for integration with DankMaterialShell but can be 
 used standalone. This package always includes the latest stable dgop release.
 
 %prep
-{{{ git_repo_setup_macro }}}
+%autosetup -n DankMaterialShell-%{version}
 
 # Download and extract DGOP binary for target architecture
 case "%{_arch}" in
@@ -160,6 +161,7 @@ fi
 
 %files
 %license LICENSE
+%doc CONTRIBUTING.md
 %doc quickshell/README.md
 %{_datadir}/quickshell/dms/
 %{_userunitdir}/dms.service
@@ -174,4 +176,7 @@ fi
 %{_bindir}/dgop
 
 %changelog
-{{{ git_repo_changelog }}}
+* Fri Nov 28 2025 Agency <thomas@mecattaf.dev> - 1:0.6.2-1
+- Update to v0.6.2
+- Add quickshell-webengine support
+- Switch from rpkg macros to explicit source URLs (required for external repo packaging)
