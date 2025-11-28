@@ -527,7 +527,3 @@ If building locally:
 
 COPR handles this automatically via build dependencies.
 
----
-
-**Maintained By:** mecattaf (thomas@mecattaf.dev)
-**Repository:** https://github.com/mecattaf/packages
