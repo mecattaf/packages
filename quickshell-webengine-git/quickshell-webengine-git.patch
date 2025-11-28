@@ -8,7 +8,7 @@
  boption(SOCKETS "Unix Sockets" ON)
  boption(WAYLAND "Wayland" ON)
  boption(WAYLAND_WLR_LAYERSHELL "  Wlroots Layer-Shell" ON REQUIRES WAYLAND)
-@@ -127,6 +128,11 @@ if (DBUS)
+@@ -121,6 +122,11 @@ if (DBUS)
  	list(APPEND QT_FPDEPS DBus)
  endif()
  
@@ -20,18 +20,16 @@
  find_package(Qt6 REQUIRED COMPONENTS ${QT_FPDEPS})
  
  # In Qt 6.10, private dependencies are required to be explicit,
-@@ -149,6 +155,12 @@ if (USE_JEMALLOC)
- 	# IMPORTED_TARGET not working for some reason
+@@ -146,6 +152,12 @@ if (USE_JEMALLOC)
  	pkg_check_modules(JEMALLOC REQUIRED jemalloc)
  	target_link_libraries(quickshell PRIVATE ${JEMALLOC_LIBRARIES})
  endif()
- 
++
 +# WebEngine linking
 +if (WEBENGINE_effective)
 +	target_link_libraries(quickshell PRIVATE Qt6::WebEngineQuick Qt6::WebChannel)
 +	target_compile_definitions(quickshell PRIVATE QS_WEBENGINE)
 +endif()
-+
+ 
  install(CODE "
  	execute_process(
- 		COMMAND ${CMAKE_COMMAND} -E create_symlink \
