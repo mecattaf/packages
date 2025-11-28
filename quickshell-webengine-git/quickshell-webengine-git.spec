@@ -17,6 +17,7 @@ Patch0:             quickshell-webengine-git.patch
 
 Conflicts:          quickshell-git <= %{tag}
 Conflicts:          quickshell-webengine
+Conflicts:          quickshell
 Provides:           desktop-notification-daemon
 
 %if 0%{?fedora} >= 43
@@ -34,24 +35,24 @@ BuildRequires:      ninja-build
 BuildRequires:      pkgconfig(breakpad)
 BuildRequires:      pkgconfig(CLI11)
 BuildRequires:      pkgconfig(gbm)
+BuildRequires:      pkgconfig(glib-2.0)
 BuildRequires:      pkgconfig(jemalloc)
 BuildRequires:      pkgconfig(libdrm)
 BuildRequires:      pkgconfig(libpipewire-0.3)
 BuildRequires:      pkgconfig(pam)
+BuildRequires:      pkgconfig(polkit-agent-1)
+BuildRequires:      pkgconfig(polkit-gobject-1)
 BuildRequires:      pkgconfig(wayland-client)
 BuildRequires:      pkgconfig(wayland-protocols)
 BuildRequires:      qt6-qtbase-private-devel
 BuildRequires:      spirv-tools
-
+# Enable ASAN if bcond is active
 %if %{with asan}
 BuildRequires:      libasan
 %endif
 
 Requires:           qt6-qtwebengine
 Requires:           qt6-qtwebchannel
-
-Provides:           desktop-notification-daemon
-Conflicts:          quickshell
 
 %description
 Flexible toolkit for building desktop shells with QtQuick.
