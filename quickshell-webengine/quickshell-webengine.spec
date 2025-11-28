@@ -84,6 +84,6 @@ HTML/JavaScript user interfaces through the WebEngineView component.
 %{_libdir}/qt6/qml/Quickshell
 
 %changelog
-* Thu Nov 28 2024 Agency <thomas@mecattaf.dev> - 0.2.1-1
+* Fri Nov 28 2025 Agency <thomas@mecattaf.dev> - 0.2.1-1
 - Initial quickshell-webengine package
 - Add QtWebEngine and QtWebChannel integration

@@ -1,3 +1,4 @@
+
 name: Build All Packages
 
 on:
@@ -6,6 +7,8 @@ on:
     paths:
       - 'breakpad/**'
       - 'quickshell-webengine/**'
+      - 'quickshell-webengine-git/**'
+      - 'dgop/**'
       - 'dms/**'
       - 'dms-greeter/**'
       - 'danksearch/**'
@@ -18,7 +21,7 @@ jobs:
   # ============================================================
   # TIER 1: No internal dependencies (can build in parallel)
   # ============================================================
-  
+
   build-breakpad:
     if: |
       github.event_name == 'workflow_dispatch' ||
@@ -121,6 +124,40 @@ jobs:
           echo "build_id=$build_id" >> $GITHUB_OUTPUT
           echo "danksearch build ID: $build_id"
 
+  build-dgop:
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      contains(github.event.head_commit.message, '[build-all]') ||
+      contains(github.event.head_commit.message, '[build-dgop]')
+    runs-on: ubuntu-latest
+    container:
+      image: 'registry.fedoraproject.org/fedora-minimal:latest'
+    outputs:
+      build_id: ${{ steps.build.outputs.build_id }}
+    steps:
+      - name: Prepare environment
+        run: |
+          microdnf -y install --nodocs --setopt=install_weak_deps=0 \
+            copr-cli git tar gzip jq
+
+      - name: Configure COPR
+        env:
+          COPR_CONF: ${{ secrets.COPR_CONFIG }}
+        run: |
+          mkdir -p ~/.config
+          echo "$COPR_CONF" > ~/.config/copr
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build dgop
+        id: build
+        run: |
+          echo "Building dgop..."
+          build_id=$(copr-cli build-package mecattaf/packages --nowait --name dgop 2>&1 | grep -o 'builds: [0-9]*' | cut -d' ' -f2 || echo "0")
+          echo "build_id=$build_id" >> $GITHUB_OUTPUT
+          echo "dgop build ID: $build_id"
+
   # ============================================================
   # TIER 2: Depends on breakpad
   # ============================================================
@@ -161,7 +198,6 @@ jobs:
           BREAKPAD_BUILD_ID="${{ needs.build-breakpad.outputs.build_id }}"
           
           if [ -n "$BREAKPAD_BUILD_ID" ] && [ "$BREAKPAD_BUILD_ID" != "0" ]; then
-            echo "Waiting for breakpad build $BREAKPAD_BUILD_ID..."
             build_id=$(copr-cli build-package mecattaf/packages --nowait --name quickshell-webengine --after-build-id "$BREAKPAD_BUILD_ID" 2>&1 | grep -o 'builds: [0-9]*' | cut -d' ' -f2 || echo "0")
           else
             build_id=$(copr-cli build-package mecattaf/packages --nowait --name quickshell-webengine 2>&1 | grep -o 'builds: [0-9]*' | cut -d' ' -f2 || echo "0")
@@ -169,6 +205,50 @@ jobs:
           
           echo "build_id=$build_id" >> $GITHUB_OUTPUT
           echo "quickshell-webengine build ID: $build_id"
+
+  build-quickshell-webengine-git:
+    if: |
+      always() &&
+      (github.event_name == 'workflow_dispatch' ||
+      contains(github.event.head_commit.message, '[build-all]') ||
+      contains(github.event.head_commit.message, '[build-webengine-git]') ||
+      contains(github.event.head_commit.message, '[build-quickshell]'))
+    needs: [build-breakpad]
+    runs-on: ubuntu-latest
+    container:
+      image: 'registry.fedoraproject.org/fedora-minimal:latest'
+    outputs:
+      build_id: ${{ steps.build.outputs.build_id }}
+    steps:
+      - name: Prepare environment
+        run: |
+          microdnf -y install --nodocs --setopt=install_weak_deps=0 \
+            copr-cli git tar gzip jq
+
+      - name: Configure COPR
+        env:
+          COPR_CONF: ${{ secrets.COPR_CONFIG }}
+        run: |
+          mkdir -p ~/.config
+          echo "$COPR_CONF" > ~/.config/copr
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build quickshell-webengine-git
+        id: build
+        run: |
+          echo "Building quickshell-webengine-git..."
+          BREAKPAD_BUILD_ID="${{ needs.build-breakpad.outputs.build_id }}"
+
+          if [ -n "$BREAKPAD_BUILD_ID" ] && [ "$BREAKPAD_BUILD_ID" != "0" ]; then
+            build_id=$(copr-cli build-package mecattaf/packages --nowait --name quickshell-webengine-git --after-build-id "$BREAKPAD_BUILD_ID" 2>&1 | grep -o 'builds: [0-9]*' | cut -d' ' -f2 || echo "0")
+          else
+            build_id=$(copr-cli build-package mecattaf/packages --nowait --name quickshell-webengine-git 2>&1 | grep -o 'builds: [0-9]*' | cut -d' ' -f2 || echo "0")
+          fi
+
+          echo "build_id=$build_id" >> $GITHUB_OUTPUT
+          echo "quickshell-webengine-git build ID: $build_id"
 
   # ============================================================
   # TIER 3: Depends on quickshell-webengine
@@ -206,15 +286,14 @@ jobs:
         id: build
         run: |
           echo "Building DMS..."
-          QUICKSHELL_BUILD_ID="${{ needs.build-quickshell-webengine.outputs.build_id }}"
-          
-          if [ -n "$QUICKSHELL_BUILD_ID" ] && [ "$QUICKSHELL_BUILD_ID" != "0" ]; then
-            echo "Waiting for quickshell-webengine build $QUICKSHELL_BUILD_ID..."
-            build_id=$(copr-cli build-package mecattaf/packages --nowait --name dms --after-build-id "$QUICKSHELL_BUILD_ID" 2>&1 | grep -o 'builds: [0-9]*' | cut -d' ' -f2 || echo "0")
+          QSW_BUILD="${{ needs.build-quickshell-webengine.outputs.build_id }}"
+
+          if [ -n "$QSW_BUILD" ] && [ "$QSW_BUILD" != "0" ]; then
+            build_id=$(copr-cli build-package mecattaf/packages --nowait --name dms --after-build-id "$QSW_BUILD" 2>&1 | grep -o 'builds: [0-9]*' | cut -d' ' -f2 || echo "0")
           else
             build_id=$(copr-cli build-package mecattaf/packages --nowait --name dms 2>&1 | grep -o 'builds: [0-9]*' | cut -d' ' -f2 || echo "0")
           fi
-          
+
           echo "build_id=$build_id" >> $GITHUB_OUTPUT
           echo "DMS build ID: $build_id"
 
@@ -250,15 +329,14 @@ jobs:
         id: build
         run: |
           echo "Building DMS Greeter..."
-          QUICKSHELL_BUILD_ID="${{ needs.build-quickshell-webengine.outputs.build_id }}"
-          
-          if [ -n "$QUICKSHELL_BUILD_ID" ] && [ "$QUICKSHELL_BUILD_ID" != "0" ]; then
-            echo "Waiting for quickshell-webengine build $QUICKSHELL_BUILD_ID..."
-            build_id=$(copr-cli build-package mecattaf/packages --nowait --name dms-greeter --after-build-id "$QUICKSHELL_BUILD_ID" 2>&1 | grep -o 'builds: [0-9]*' | cut -d' ' -f2 || echo "0")
+          QSW_BUILD="${{ needs.build-quickshell-webengine.outputs.build_id }}"
+
+          if [ -n "$QSW_BUILD" ] && [ "$QSW_BUILD" != "0" ]; then
+            build_id=$(copr-cli build-package mecattaf/packages --nowait --name dms-greeter --after-build-id "$QSW_BUILD" 2>&1 | grep -o 'builds: [0-9]*' | cut -d' ' -f2 || echo "0")
           else
             build_id=$(copr-cli build-package mecattaf/packages --nowait --name dms-greeter 2>&1 | grep -o 'builds: [0-9]*' | cut -d' ' -f2 || echo "0")
           fi
-          
+
           echo "build_id=$build_id" >> $GITHUB_OUTPUT
           echo "DMS Greeter build ID: $build_id"
 
@@ -268,7 +346,16 @@ jobs:
 
   build-summary:
     if: always()
-    needs: [build-breakpad, build-fonts, build-danksearch, build-quickshell-webengine, build-dms, build-dms-greeter]
+    needs: [
+      build-breakpad,
+      build-fonts,
+      build-danksearch,
+      build-dgop,
+      build-quickshell-webengine,
+      build-quickshell-webengine-git,
+      build-dms,
+      build-dms-greeter
+    ]
     runs-on: ubuntu-latest
     container:
       image: 'registry.fedoraproject.org/fedora-minimal:latest'
@@ -298,14 +385,16 @@ jobs:
           echo "Breakpad: ${{ needs.build-breakpad.outputs.build_id }}"
           echo "Material Symbols Fonts: ${{ needs.build-fonts.outputs.build_id }}"
           echo "DankSearch: ${{ needs.build-danksearch.outputs.build_id }}"
+          echo "DGOP: ${{ needs.build-dgop.outputs.build_id }}"
           echo "QuickShell WebEngine: ${{ needs.build-quickshell-webengine.outputs.build_id }}"
+          echo "QuickShell WebEngine (GIT): ${{ needs.build-quickshell-webengine-git.outputs.build_id }}"
           echo "DMS: ${{ needs.build-dms.outputs.build_id }}"
           echo "DMS Greeter: ${{ needs.build-dms-greeter.outputs.build_id }}"
 
           echo ""
           echo "=== Dependency Chain ==="
-          echo "Tier 1 (parallel): breakpad, material-symbols-fonts, danksearch"
-          echo "Tier 2: quickshell-webengine (after breakpad)"
+          echo "Tier 1 (parallel): breakpad, material-symbols-fonts, danksearch, dgop"
+          echo "Tier 2: quickshell-webengine, quickshell-webengine-git (after breakpad)"
           echo "Tier 3 (parallel): dms, dms-greeter (after quickshell-webengine)"
 
           echo ""
