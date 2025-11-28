@@ -93,8 +93,3 @@ results_*
 test.qml
 test*.qml
 memory-test.qml
-
-# Personal notes
-TODO.md
-NOTES.md
-.personal/
