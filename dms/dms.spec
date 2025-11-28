@@ -160,7 +160,6 @@ fi
 
 %files
 %license LICENSE
-%doc CONTRIBUTING.md
 %doc quickshell/README.md
 %{_datadir}/quickshell/dms/
 %{_userunitdir}/dms.service
