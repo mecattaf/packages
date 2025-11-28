@@ -46,16 +46,16 @@
  #if CRASH_REPORTER
  #include "../crash/handler.hpp"
  #endif
-@@ -184,6 +188,12 @@ int launch(const LaunchArgs& args, char** argv, QCoreApplication* coreApplicati
+@@ -186,6 +190,13 @@ int launch(const LaunchArgs& args, char** argv, QCoreApplication* coreApplicati
  
- 	QGuiApplication::setDesktopSettingsAware(pragmas.desktopSettingsAware);
+ 	delete coreApplication;
  
-+	// Initialize QtWebEngine before creating QGuiApplication
-+	// This MUST happen before any QGuiApplication is created
 +#ifdef QS_WEBENGINE
++	// Initialize QtWebEngine after QCoreApplication is deleted,
++	// but before QGuiApplication is created (Qt requirement)
++	QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
 +	QtWebEngineQuick::initialize();
 +#endif
 +
- 	delete coreApplication;
- 
  	QGuiApplication* app = nullptr;
+ 	auto qArgC = 0;
