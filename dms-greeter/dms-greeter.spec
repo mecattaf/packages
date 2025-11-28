@@ -124,7 +124,7 @@ chown -R greeter:greeter %{_sharedstatedir}/greeter 2>/dev/null || true
 PAM_CONFIG="/etc/pam.d/greetd"
 if [ ! -f "$PAM_CONFIG" ]; then
     cat > "$PAM_CONFIG" << 'PAM_EOF'
-#%PAM-1.0
+#%%PAM-1.0
 auth       substack    system-auth
 auth       include     postlogin
 
@@ -145,7 +145,7 @@ PAM_EOF
 elif ! grep -q "pam_systemd\|system-auth" "$PAM_CONFIG"; then
     cp "$PAM_CONFIG" "$PAM_CONFIG.backup-dms-greeter"
     cat > "$PAM_CONFIG" << 'PAM_EOF'
-#%PAM-1.0
+#%%PAM-1.0
 auth       substack    system-auth
 auth       include     postlogin
 
@@ -189,7 +189,7 @@ GREETD_EOF
     sed -i "s|COMPOSITOR_PLACEHOLDER|$COMPOSITOR|" "$GREETD_CONFIG"
     CONFIG_STATUS="Created new config with $COMPOSITOR ✓"
 elif ! grep -q "dms-greeter" "$GREETD_CONFIG"; then
-    BACKUP_FILE="${GREETD_CONFIG}.backup-$(date +%Y%m%d-%H%M%S)"
+    BACKUP_FILE="${GREETD_CONFIG}.backup-$(date +%%Y%%m%%d-%%H%%M%%S)"
     cp "$GREETD_CONFIG" "$BACKUP_FILE" 2>/dev/null || true
 
     sed -i "/^\[default_session\]/,/^\[/ s|^command =.*|command = \"/usr/bin/dms-greeter --command $COMPOSITOR\"|" "$GREETD_CONFIG"

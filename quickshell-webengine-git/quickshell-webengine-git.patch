@@ -33,3 +33,29 @@
  
  install(CODE "
  	execute_process(
+--- a/src/launch/launch.cpp
++++ b/src/launch/launch.cpp
+@@ -26,6 +26,10 @@
+ #include "build.hpp"
+ #include "launch_p.hpp"
+ 
++#ifdef QS_WEBENGINE
++#include <QtWebEngineQuick/qtwebenginequickglobal.h>
++#endif
++
+ #if CRASH_REPORTER
+ #include "../crash/handler.hpp"
+ #endif
+@@ -184,6 +188,12 @@ int launch(const LaunchArgs& args, char** argv, QCoreApplication* coreApplicati
+ 
+ 	QGuiApplication::setDesktopSettingsAware(pragmas.desktopSettingsAware);
+ 
++	// Initialize QtWebEngine before creating QGuiApplication
++	// This MUST happen before any QGuiApplication is created
++#ifdef QS_WEBENGINE
++	QtWebEngineQuick::initialize();
++#endif
++
+ 	delete coreApplication;
+ 
+ 	QGuiApplication* app = nullptr;
