@@ -5,7 +5,7 @@
 %global snapdate    20251125
 %global tag         0.2.1
 
-Name:               quickshell-git-webengine
+Name:               quickshell-webengine-git
 Version:            %{tag}^%{commits}.git%(c=%{commit}; echo ${c:0:7})
 Release:            1%{?dist}
 Summary:            QtQuick desktop shell toolkit (Git snapshot) with QtWebEngine support
@@ -13,7 +13,7 @@ Summary:            QtQuick desktop shell toolkit (Git snapshot) with QtWebEngin
 License:            LGPL-3.0-only AND GPL-3.0-only
 URL:                https://github.com/quickshell-mirror/quickshell
 Source0:            %{url}/archive/%{commit}/quickshell-%{commit}.tar.gz
-Patch0:             quickshell-git-webengine.patch
+Patch0:             quickshell-webengine-git.patch
 
 Conflicts:          quickshell-git <= %{tag}
 Conflicts:          quickshell-webengine
